@@ -1,9 +1,17 @@
-# Data
+# Raw and processed data
 data/raw/
 data/processed/
+
+# Model objects — large files, reproducible from code
+outputs/models/
 
 # R environment
 .Rhistory
 .RData
 .Rproj.user
+*.Rproj
 renv/library/
+
+# OS files
+.DS_Store
+Thumbs.db
