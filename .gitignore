@@ -4,6 +4,8 @@ data/processed/
 
 # Model objects — large files, reproducible from code
 outputs/models/
+outputs/figures/
+outputs/tables/
 
 # R environment
 .Rhistory
