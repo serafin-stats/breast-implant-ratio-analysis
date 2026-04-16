@@ -105,11 +105,12 @@ The more clinically informative findings emerged from the rater agreement struct
 breast-augmentation-ratio-analysis/
 │
 ├── R/
-│   ├── utils.R                  # Shared helpers, model grid, output functions
-│   ├── 01_clean.R               # Raw -> processed pipeline (both cohorts)
-│   ├── 02_descriptives.R        # Demographics, missingness, MAR checks
-│   ├── 03_models.R              # All model fits via declarative model grid
-│   └── 04_outputs.R             # All tables, figures, predicted probabilities
+│   ├── utils.R                   # Shared helpers, model grid, output functions
+│   ├── 01_clean.R                # Raw -> processed pipeline (both cohorts)
+│   ├── 02_descriptives.R         # Demographics, missingness, MAR checks
+│   ├── 03_models.R               # All model fits via declarative model grid
+│   ├── 04_outputs.R              # All tables, figures
+│   └── 05_supplemental_outputs.R # Predicted probabilities, DAG, additional figures
 │
 ├── sas/                         # SAS + SQL reproduction (planned)
 │   ├── 01_data_prep.sas
