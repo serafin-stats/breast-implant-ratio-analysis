@@ -13,6 +13,7 @@ outputs/tables/
 .Rproj.user
 *.Rproj
 renv/library/
+config.R
 
 # OS files
 .DS_Store

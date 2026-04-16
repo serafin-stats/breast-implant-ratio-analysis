@@ -347,57 +347,170 @@ add_month_group <- function(data) {
 #'   filename      output .rds filename under outputs/models/
 #'
 #' @return A tibble with one row per model.
-build_model_grid <- function() {
 
+build_model_grid <- function() {
+  
   cohort_meta <- tribble(
     ~cohort,    ~rater_id,
     "surgeon",  "Surgeon.SurveyID",
     "lay",      "Lay.SurveyID"
   )
-
-  outcomes <- c("Aesthetic", "Naturalness")
-
-  # Primary predictors (post-op ratio, ratio difference, upper proportion)
+  
+  # Primary predictors
   primary_preds <- tribble(
     ~predictor_key, ~predictor,                   ~predictor_sq,
     "upper",        "upper_prop_z",               "upper_prop_z_sq",
     "postop",       "RATIO_Post_Op_pct_centered", "RATIO_Post_Op_pct_centered_sq",
     "ratiodiff",    "RATIO_DIFF_pct_centered",    "RATIO_DIFF_pct_centered_sq"
   )
-
+  
   # Pre-op predictor for sensitivity analyses
   preop_pred <- tribble(
     ~predictor_key, ~predictor,                  ~predictor_sq,
     "preop",        "RATIO_Pre_Op_pct_centered", "RATIO_Pre_Op_pct_centered_sq"
   )
-
+  
   adj_cov <- "Months.Post.Op + Method"
-
-  unadj <- crossing(cohort_meta, outcome = outcomes, primary_preds) %>%
-    mutate(outcome_col = outcome, covariates = NA_character_,
-           model_type = "ordinal", model_set = "unadjusted")
-
-  adj_ord <- crossing(cohort_meta, outcome = outcomes, primary_preds) %>%
+  
+  # ------------------------------------------------------------------
+  # UNADJUSTED ORDINAL
+  # ------------------------------------------------------------------
+  # Surgeon aesthetic: Aesthetic_3 (3-level collapsed) — matches thesis
+  # All others: full 5-level Aesthetic or Naturalness
+  # ------------------------------------------------------------------
+  
+  # Surgeon aesthetic unadjusted — Aesthetic_3
+  surg_uni_aes3 <- crossing(
+    tibble(cohort = "surgeon", rater_id = "Surgeon.SurveyID"),
+    primary_preds
+  ) %>%
+    mutate(
+      outcome     = "Aesthetic_3",
+      outcome_col = "Aesthetic_3",
+      covariates  = NA_character_,
+      model_type  = "ordinal",
+      model_set   = "unadjusted"
+    )
+  
+  # Surgeon naturalness unadjusted — full Naturalness
+  surg_uni_nat <- crossing(
+    tibble(cohort = "surgeon", rater_id = "Surgeon.SurveyID"),
+    primary_preds
+  ) %>%
+    mutate(
+      outcome     = "Naturalness",
+      outcome_col = "Naturalness",
+      covariates  = NA_character_,
+      model_type  = "ordinal",
+      model_set   = "unadjusted"
+    )
+  
+  # Lay unadjusted — both outcomes, full 5-level
+  lay_uni <- crossing(
+    tibble(cohort = "lay", rater_id = "Lay.SurveyID"),
+    outcome = c("Aesthetic", "Naturalness"),
+    primary_preds
+  ) %>%
+    mutate(
+      outcome_col = outcome,
+      covariates  = NA_character_,
+      model_type  = "ordinal",
+      model_set   = "unadjusted"
+    )
+  
+  unadj <- bind_rows(surg_uni_aes3, surg_uni_nat, lay_uni)
+  
+  # ------------------------------------------------------------------
+  # ADJUSTED ORDINAL  (same outcome mapping as unadjusted)
+  # ------------------------------------------------------------------
+  
+  surg_adj_aes3 <- crossing(
+    tibble(cohort = "surgeon", rater_id = "Surgeon.SurveyID"),
+    primary_preds
+  ) %>%
+    mutate(outcome = "Aesthetic_3", outcome_col = "Aesthetic_3",
+           covariates = adj_cov, model_type = "ordinal", model_set = "adjusted")
+  
+  surg_adj_nat <- crossing(
+    tibble(cohort = "surgeon", rater_id = "Surgeon.SurveyID"),
+    primary_preds
+  ) %>%
+    mutate(outcome = "Naturalness", outcome_col = "Naturalness",
+           covariates = adj_cov, model_type = "ordinal", model_set = "adjusted")
+  
+  lay_adj_ord <- crossing(
+    tibble(cohort = "lay", rater_id = "Lay.SurveyID"),
+    outcome = c("Aesthetic", "Naturalness"),
+    primary_preds
+  ) %>%
     mutate(outcome_col = outcome, covariates = adj_cov,
            model_type = "ordinal", model_set = "adjusted")
-
-  adj_bin <- crossing(cohort_meta, outcome = outcomes, primary_preds) %>%
+  
+  adj_ord <- bind_rows(surg_adj_aes3, surg_adj_nat, lay_adj_ord)
+  
+  # ------------------------------------------------------------------
+  # ADJUSTED BINARY  (Aesthetic_bin / Naturalness_bin — both cohorts)
+  # ------------------------------------------------------------------
+  
+  adj_bin <- crossing(cohort_meta, outcome = c("Aesthetic", "Naturalness"), primary_preds) %>%
     mutate(outcome_col = paste0(outcome, "_bin"), covariates = adj_cov,
            model_type = "binary", model_set = "adjusted")
-
-  sens_ord <- crossing(cohort_meta, outcome = outcomes, preop_pred) %>%
-    mutate(outcome_col = outcome, covariates = adj_cov,
-           model_type = "ordinal", model_set = "sensitivity")
-
-  sens_bin <- crossing(cohort_meta, outcome = outcomes, preop_pred) %>%
-    mutate(outcome_col = paste0(outcome, "_bin"), covariates = adj_cov,
-           model_type = "binary", model_set = "sensitivity")
-
+  
+  # ------------------------------------------------------------------
+  # SENSITIVITY — pre-op ratios
+  # ------------------------------------------------------------------
+  
+  sens_ord <- crossing(cohort_meta, primary_preds) %>%
+    # Surgeon aesthetic still uses Aesthetic_3 in sensitivity
+    mutate(
+      outcome = case_when(
+        cohort == "surgeon" ~ "Aesthetic_3",
+        TRUE ~ "Aesthetic"
+      ),
+      outcome_col = outcome,
+      predictor_key = preop_pred$predictor_key,
+      predictor     = preop_pred$predictor,
+      predictor_sq  = preop_pred$predictor_sq,
+      covariates  = adj_cov,
+      model_type  = "ordinal",
+      model_set   = "sensitivity"
+    ) %>%
+    # Also Naturalness sensitivity
+    bind_rows(
+      crossing(cohort_meta, primary_preds) %>%
+        mutate(
+          outcome = "Naturalness", outcome_col = "Naturalness",
+          predictor_key = preop_pred$predictor_key,
+          predictor     = preop_pred$predictor,
+          predictor_sq  = preop_pred$predictor_sq,
+          covariates = adj_cov, model_type = "ordinal", model_set = "sensitivity"
+        )
+    ) %>%
+    distinct()
+  
+  sens_bin <- crossing(cohort_meta, outcome = c("Aesthetic", "Naturalness"), primary_preds) %>%
+    mutate(
+      outcome_col   = paste0(outcome, "_bin"),
+      predictor_key = preop_pred$predictor_key,
+      predictor     = preop_pred$predictor,
+      predictor_sq  = preop_pred$predictor_sq,
+      covariates = adj_cov, model_type = "binary", model_set = "sensitivity"
+    )
+  
+  # ------------------------------------------------------------------
+  # COMBINE AND BUILD FILENAMES
+  # ------------------------------------------------------------------
+  
   bind_rows(unadj, adj_ord, adj_bin, sens_ord, sens_bin) %>%
     mutate(
       cohort_abbrev  = if_else(cohort == "surgeon", "surg", "lay"),
-      outcome_abbrev = if_else(str_detect(outcome_col, "(?i)aesth"), "aes", "nat"),
-      type_prefix    = case_when(
+      outcome_abbrev = case_when(
+        str_detect(outcome_col, "Aesthetic_3")    ~ "aes3",
+        str_detect(outcome_col, "(?i)aesth")      ~ "aes",
+        str_detect(outcome_col, "(?i)natural")    ~ "nat",
+        TRUE                                      ~ outcome_col
+      ),
+      type_prefix = case_when(
         model_set  == "unadjusted" ~ "uni",
         model_type == "ordinal"    ~ "ord",
         TRUE                       ~ "bin"
@@ -414,7 +527,6 @@ build_model_grid <- function() {
       cohort_abbrev, outcome_abbrev, type_prefix, filename
     )
 }
-
 
 #' Fit a single model from a model grid row
 #'
