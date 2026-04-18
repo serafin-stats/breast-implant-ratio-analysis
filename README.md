@@ -25,9 +25,9 @@ Using standardised postoperative images from 40 patients, blinded ratings from s
 
 ## Interactive Dashboard
 
-> **Shiny dashboard in development** — a clinician-facing interactive tool for exploring predicted probability curves, ICC estimates, and model results across cohorts. Designed to support the manuscript and future clinical translation.
+> A clinician-facing interactive tool for exploring predicted probability curves, ICC estimates, and model results across cohorts. Designed to support the manuscript and future clinical translation.
 >
-> Link will be added upon deployment to shinyapps.io
+> > **[Launch Interactive Dashboard →](https://serafin-stats.shinyapps.io/breast-augmentation-outcomes/)**
 
 ---
 
