@@ -1,12 +1,13 @@
 # Raw and processed data
 data/raw/
 data/processed/
+shiny/data/
 
 # Model objects — large files, reproducible from code
 outputs/models/
 outputs/figures/
 outputs/tables/
-
+shiny/models/
 # R environment
 .Rhistory
 .RData

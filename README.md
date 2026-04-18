@@ -140,6 +140,15 @@ breast-augmentation-ratio-analysis/
 
 This project uses [`renv`](https://rstudio.github.io/renv/) for dependency management.
 
+## Local Setup
+
+Some outputs require the original thesis model files. Create a `config.R` 
+file in the project root (this file is gitignored):
+
+```r
+THESIS_MODELS <- "/path/to/your/Models/folder"
+```
+
 ```r
 # 1. Restore the package environment
 renv::restore()
