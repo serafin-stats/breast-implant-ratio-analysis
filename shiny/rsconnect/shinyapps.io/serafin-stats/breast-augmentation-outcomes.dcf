@@ -1,0 +1,10 @@
+name: breast-augmentation-outcomes
+title:
+username: serafin-stats
+account: serafin-stats
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 17169971
+bundleId: 11872104
+url: https://serafin-stats.shinyapps.io/breast-augmentation-outcomes/
+version: 1
